@@ -4,3 +4,7 @@ namespace: production
 resources:
 - ../../base
 - ./ingress.yaml
+images:
+- name: siws/ephemeral-backend
+  newName: siws/ephemeral-backend
+  newTag: "14813470482"
