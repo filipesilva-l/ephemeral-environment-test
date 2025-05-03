@@ -1,0 +1,43 @@
+name: production-deploy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Publish
+      run: dotnet publish -c Release /t:PublishContainer -p ContainerImageTags='"${{ github.run_id }}"'
+
+    - name: Docker Login
+      uses: docker/login-action@v3.4.0
+      with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Push image to docker
+      run: docker push siws/ephemeral-backend:${{ github.run_id }}
+
+    - name: Change image in overlay
+      run: |
+        cd deploy/k8s/applications/overlays/production/
+        kustomize edit set image siws/ephemeral-backend=siws/ephemeral-backend:${{ github.run_id }}
