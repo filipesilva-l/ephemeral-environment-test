@@ -1,0 +1,43 @@
+name: staging-deploy
+
+on:
+  push:
+    branches: [ "staging" ]
+  pull_request:
+    branches: [ "staging" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: |
+        cd backend
+        dotnet publish -c Release /t:PublishContainer -p ContainerImageTags='"${{ github.run_id }}"'
+
+    - name: Docker Login
+      uses: docker/login-action@v3.4.0
+      with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Push image to docker
+      run: docker push siws/ephemeral-backend:${{ github.run_id }}
+
+    - name: Change image in overlay
+      run: |
+        cd deploy/k8s/applications/overlays/production/
+        kustomize edit set image siws/ephemeral-backend=siws/ephemeral-backend:${{ github.run_id }}
+        git config --global user.name 'CI/CD'
+        git config --global user.email 'cicd@ephemeral.com'
+        git commit -am "ci: bumping image version [skip ci]"
+        git push
