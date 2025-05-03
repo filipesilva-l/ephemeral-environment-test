@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: prs
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - pullRequest:
+      github:
+        owner: filipesilva-l
+        repo: ephemeral-environment-test
+      requeueAfterSeconds: 1800
+      filters:
+        targetBranchMatch: "develop"
+  template:
+    metadata:
+      name: 'prs-{{.branch}}'
+    spec:
+      source:
+        repoURL: 'https://github.com/filipesilva-l/ephemeral-environment-test'
+        targetRevision: '{{.branch}}'
+        path: deploy/k8s/applications/overlays/development
+        project: default
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: prs-{{.branch}}
