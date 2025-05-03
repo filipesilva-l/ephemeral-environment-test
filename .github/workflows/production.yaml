@@ -37,3 +37,7 @@ jobs:
       run: |
         cd deploy/k8s/applications/overlays/production/
         kustomize edit set image siws/ephemeral-backend=siws/ephemeral-backend:${{ github.run_id }}
+        git config --global user.name 'CI/CD'
+        git config --global user.email 'cicd@ephemeral.com'
+        git commit -am "ci: bumping image version [skip ci]"
+        git push
