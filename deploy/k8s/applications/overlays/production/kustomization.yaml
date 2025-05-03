@@ -7,4 +7,4 @@ resources:
 images:
 - name: siws/ephemeral-backend
   newName: siws/ephemeral-backend
-  newTag: "14813542236"
+  newTag: "14813801608"
